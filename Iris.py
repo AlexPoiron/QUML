@@ -9,6 +9,8 @@ ALPHA = 0.1
 QUANTILE = 3
 TEST_SIZE = 0.4
 TRAIN_SIZE = 0.6
+NSHOTS = 400
+qs = qiskit.Aer.get_backend('qasm_simulator')
 
 def standardise(x):
     return (x-np.mean(x))/np.std(x)
@@ -28,7 +30,13 @@ class Iris:
         "Iris-setosa" : "00",
         "Iris-versicolor" : "01",
         "Iris-virginica" : "10",
-        }    
+        }
+    
+    #Inverse the dict
+    def get_dicinv(self):
+        dict = self.get_dict()
+        dicinv = {dict[k] : k for k in dict} 
+        return dicinv    
     
     def build_circuit(self, theta, omega):
         qc = qiskit.QuantumCircuit(2,2)
@@ -48,6 +56,16 @@ class Iris:
             qc.rx(np.pi/2, 0)
             qc.rx(np.pi/2, 1)
         return qc
+    
+    def prediction_dict(self, theta, omega):
+        qc = self.build_circuit(theta, omega)
+        qc.measure(range(2), range(2))
+        
+        job = qiskit.execute(qc, shots=NSHOTS, backend=qs)
+        c = job.result().get_counts()
+        c.pop('11', None)
+        
+        return c
     
     def get_df(self):
         path = self.get_pathname()
@@ -108,9 +126,8 @@ def train_iris():
 
 def get_iris_accuracy(theta_opti):
     classifier_iris, parameters = define_iris()
-    #Accuracy
-    #theta_opti = get_result("results/iris_result.txt")
-    classifier_iris.accuracy(parameters["iris"], theta_opti, parameters["test_set"], parameters["dict_qbits"])
+    dicinv = classifier_iris.get_dicinv()
+    classifier_iris.accuracy(parameters["iris"], theta_opti, parameters["test_set"], dicinv)
     return
         
     

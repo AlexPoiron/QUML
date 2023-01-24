@@ -12,6 +12,8 @@ ALPHA = 0.1
 QUANTILE = 3
 TEST_SIZE = 0.4
 TRAIN_SIZE = 0.6
+NSHOTS = 400
+qs = qiskit.Aer.get_backend('qasm_simulator')
 
 def standardise(x):
     return (x-np.mean(x))/np.std(x)
@@ -20,14 +22,24 @@ def rescaleFeature(x):
     return (1-ALPHA/2)*(np.pi/QUANTILE)*standardise(x)
 
 class XOR:
+    def __init__(self):
+        pass
+    
     def get_dict(self):
         return {
-        "1" : "10",
-        "1" : "01",
-        "0" : "00",
-        "0" : "11"
-        } 
+        "1" : ["10","01"],
+        "0" : ["00","11"]
+        }
+        
+    def get_dicinv(self):
+        dict = self.get_dict()
+        dicinv = {}
+        for k in dict:
+            for i in dict[k]:
+                dicinv.update({i : k})
+        return dicinv
 
+    #Generic methods for build a ciruict and measure it
     def build_circuit(self, theta, omega):
         qc = qiskit.QuantumCircuit(2)
         qc.rx(np.pi/2, 0)
@@ -51,6 +63,16 @@ class XOR:
         qc.rx(np.pi/2, 0)
         qc.rx(np.pi/2, 1)
         return qc
+    
+    def prediction_dict(self, theta, omega):
+        qc = qiskit.QuantumCircuit(2, 2)
+        qc.append(self.build_circuit(theta, omega), range(2))
+        qc.measure(range(2), range(2))
+        
+        job = qiskit.execute(qc, shots=NSHOTS, backend=qs)
+        c = job.result().get_counts()
+        
+        return c
     
     def get_df(self):
         X_rxor, y_rxor = generate_gaussian_parity(1000, angle_params=np.pi / 4)
@@ -92,7 +114,6 @@ def define_XOR():
 
 def train_XOR():
     classifier_xor, parameters = define_XOR()
-    #print(parameters["df"])
     print("Training the model...")
     start = time.time()
     
@@ -113,8 +134,6 @@ def train_XOR():
 
 def get_XOR_accuracy(theta_opti):
     classifier_xor, parameters = define_XOR()
-    #Accuracy
-    #theta_opti = get_result("results/iris_result.txt")
-    classifier_xor.accuracy(parameters["xor"], theta_opti, parameters["test_set"], parameters["dict_qbits"])
-    return
+    dicinv = parameters["xor"].get_dicinv()
+    classifier_xor.accuracy(parameters["xor"], theta_opti, parameters["test_set"], dicinv)
 

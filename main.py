@@ -40,10 +40,9 @@ def main_XOR(trained):
 def main():
     
     
-    #trained = False
-    #main_iris(trained)
-    
-    main_XOR(True)
+    #main_iris(True)
+    main_XOR(False)
+    return
    
     
     
