@@ -12,7 +12,6 @@ class Classifier:
         pass
     
     #Getters
-    
     def get_dicinv(self, dict):
         dicinv = {dict[k] : k for k in dict} 
         return dicinv
@@ -22,15 +21,18 @@ class Classifier:
     def loss_batch(self, theta, batch, dict, df, problem):
         def loss(theta, df, attributes, problem):
             omega = df[attributes].values
+            print(df)
             label = dict[df["class"]]
             
             c = self.predictionDict(theta, omega, problem)
+            c.pop('11', None)
             
             if label in c:
                 e = np.exp(c[label]/NSHOTS)
             else :
                 e = 1
             s = np.exp(np.array(list(c.values()))/NSHOTS).sum()
+            #print("c =", c, "|| s =", s)
             return -np.log(e/s)
         
         attributes = df.columns[:-1]
@@ -47,13 +49,14 @@ class Classifier:
     
     #Prediction methods
     def predictionDict(self, theta, omega, problem):
-        qc = qiskit.QuantumCircuit(2,2)
-        qc.append(problem.build_circuit(theta, omega), range(2))
+        qc = problem.build_circuit(theta, omega)
+        #qc.append(problem.build_circuit(theta, omega), range(2))
         qc.measure(range(2), range(2))
         
         job = qiskit.execute(qc, shots=NSHOTS, backend=qs)
         c = job.result().get_counts()
-    
+        c.pop('11', None)
+        #print("c =", c)
         return c
 
     def prediction(self, theta, omega, problem):
@@ -77,8 +80,11 @@ class Classifier:
         return dicinv[ypred]
     
     #Accuracy method
-    def accuracy(self,problem, theta_opti, test, dict):
+    def accuracy(self, problem, theta_opti, test, dict):
         dicinv = self.get_dicinv(dict)
+        #print(dicinv)
+        #print(self.prediction(theta_opti, test.iloc[0], problem))
         test["predicted"] = test.apply(lambda row : dicinv[self.prediction(theta_opti, row, problem)], axis=1)
         
         print("Acurracy of Iris Circuit: ", ((sum(np.array(test["class"] == test["predicted"]))/len(test))*100).round(2), '%')
+        #print(test)
