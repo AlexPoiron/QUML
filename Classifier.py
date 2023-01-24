@@ -59,4 +59,4 @@ class Classifier:
     def accuracy(self, problem, theta_opti, test, dicinv):
         test["predicted"] = test.apply(lambda row : dicinv[self.prediction(theta_opti, row, problem)], axis=1)
         
-        print("Acurracy of Iris Circuit: ", ((sum(np.array(test["class"] == test["predicted"]))/len(test))*100).round(2), '%')
+        print("Acurracy of the circuit: ", ((sum(np.array(test["class"] == test["predicted"]))/len(test))*100).round(2), '%')

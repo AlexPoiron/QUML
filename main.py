@@ -1,5 +1,7 @@
 import Iris
 import XOR
+import Skin
+import Quaternary
 import numpy as np
 
 #Save theta_opti in a result file. In this way, we can dierctly compute the accuravy with the optimized parameter without execute
@@ -37,11 +39,32 @@ def main_XOR(trained):
     
     XOR.get_XOR_accuracy(theta_opti)
 
+def main_skin(trained):
+    if trained:
+        theta_opti = Skin.train_skin()
+        save_results("results/Skin_result.txt", theta_opti)
+    else:
+        theta_opti = get_result("results/Skin_result.txt")
+    
+    Skin.get_skin_accuracy(theta_opti)
+
+def main_quaternary(trained):
+    if trained:
+        theta_opti = Quaternary.train_quaternary()
+        save_results("results/Quaternary_result.txt", theta_opti)
+    else:
+        theta_opti = get_result("results/Quaternary_result.txt")
+    
+    Quaternary.get_quaternary_accuracy(theta_opti)
+
 def main():
     
     
-    #main_iris(True)
-    main_XOR(False)
+    #main_iris(False)
+    #main_XOR(False)
+    main_skin(True)
+    #main_quaternary(True)
+    
     return
    
     

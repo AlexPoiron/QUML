@@ -30,7 +30,8 @@ class XOR:
         "1" : ["10","01"],
         "0" : ["00","11"]
         }
-        
+    
+    #Dict in reverse
     def get_dicinv(self):
         dict = self.get_dict()
         dicinv = {}

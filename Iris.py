@@ -122,11 +122,9 @@ def train_iris():
     print("Training duration: {:0>2}min{:05.2f}s".format(int(minutes),seconds))
     return theta_opti
 
-    #save_results("results/iris_result.txt", theta_opti)
-
 def get_iris_accuracy(theta_opti):
     classifier_iris, parameters = define_iris()
-    dicinv = classifier_iris.get_dicinv()
+    dicinv = parameters["iris"].get_dicinv()
     classifier_iris.accuracy(parameters["iris"], theta_opti, parameters["test_set"], dicinv)
     return
         
