@@ -23,7 +23,7 @@ def rescaleFeature(x):
 
 class XOR:
     def __init__(self):
-        pass
+        self.name = "XOR"
     
     def get_dict(self):
         return {

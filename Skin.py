@@ -21,6 +21,7 @@ def rescaleFeature(x):
 class Skin:
     def __init__(self, pathname):
         self.path = pathname
+        self.name = "Skin"
 
     def get_pathname(self):
         return self.path
@@ -84,7 +85,10 @@ class Skin:
         for key in rem_keys:
             if key in c:
                 c.pop(key)
-                
+
+        if(c == {}):
+            c.update({"000": 0, "111" : 0})
+        
         return c
 
     def get_df(self):

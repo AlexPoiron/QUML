@@ -10,6 +10,7 @@ QUANTILE = 3
 TEST_SIZE = 0.4
 TRAIN_SIZE = 0.6
 NSHOTS = 400
+TOKEN = "73547946bd0f7f1e1b48368ac35872c76b8bd0100e1e84ea0411076c44208af1127b3b69f345e138c07b03c36809afba05d2e5d9aa1eac3e4d352be42575af06"
 qs = qiskit.Aer.get_backend('qasm_simulator')
 
 def standardise(x):
@@ -21,6 +22,7 @@ def rescaleFeature(x):
 class Iris:
     def __init__(self, pathname):
         self.path = pathname
+        self.name = "Iris"
     
     def get_pathname(self):
         return self.path
@@ -66,6 +68,25 @@ class Iris:
         c.pop('11', None)
         
         return c
+    
+    
+    def prediction_dict_IBMQ(self, theta, omega):
+        qiskit.IBMQ.save_account(TOKEN, overwrite=True) 
+        provider = qiskit.IBMQ.load_account()
+        backend = qiskit.providers.ibmq.least_busy(provider.backends())
+
+        qc = self.build_circuit(theta, omega)
+        qc.measure(range(2), range(2))
+
+        mapped_circuit = qiskit.transpile(qc, backend=backend)
+        qobj = qiskit.assemble(mapped_circuit, backend=backend, shots=NSHOTS)
+
+        job = backend.run(qobj)
+        print(job.status())
+        res = job.result().get_counts()
+        res.pop("11", None)
+
+        return res
     
     def get_df(self):
         path = self.get_pathname()
@@ -122,10 +143,10 @@ def train_iris():
     print("Training duration: {:0>2}min{:05.2f}s".format(int(minutes),seconds))
     return theta_opti
 
-def get_iris_accuracy(theta_opti):
+def get_iris_accuracy(theta_opti, IBMQ):
     classifier_iris, parameters = define_iris()
     dicinv = parameters["iris"].get_dicinv()
-    classifier_iris.accuracy(parameters["iris"], theta_opti, parameters["test_set"], dicinv)
+    classifier_iris.accuracy(parameters["iris"], theta_opti, parameters["test_set"], dicinv, IBMQ)
     return
         
     

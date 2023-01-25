@@ -35,28 +35,30 @@ class Classifier:
         lambda data : loss(theta, data, attributes, problem),
         axis=1
         )
+        print(s.mean())
         return s.mean()
     
     #Train method
     def train(self, train_set, theta_init, dict, df, problem):
         opt = sp.optimize.minimize(fun = lambda theta : self.loss_batch(theta, train_set, dict, df, problem), x0=theta_init, method='COBYLA', tol=1e-3)
+        print("Optimal parameter Theta:", opt.x)
         return opt.x
     
 
-    def prediction(self, theta, omega, problem):
+    def prediction(self, theta, omega, problem, IBMQ):
         def argmaxDict(c):
-            v = None
-            for key in c :
-                if v is None or c[key] >= v:
-                    k = key
-                    v = c[key]
-            return k
+            return max(c, key=c.get)
+        
+        #If we decide to use online quantic material
+        if IBMQ:
+            return argmaxDict(problem.prediction_dict_IBMQ(theta, omega))
         
         return argmaxDict(problem.prediction_dict(theta, omega))
 
 
     #Accuracy method
-    def accuracy(self, problem, theta_opti, test, dicinv):
-        test["predicted"] = test.apply(lambda row : dicinv[self.prediction(theta_opti, row, problem)], axis=1)
+    def accuracy(self, problem, theta_opti, test, dicinv, IBMQ):
+        print("Compute the accuracy...")
+        test["predicted"] = test.apply(lambda row : dicinv[self.prediction(theta_opti, row, problem, IBMQ)], axis=1)
         
-        print("Acurracy of the circuit: ", ((sum(np.array(test["class"] == test["predicted"]))/len(test))*100).round(2), '%')
+        print("Acurracy of the", problem.name, "circuit: ", ((sum(np.array(test["class"] == test["predicted"]))/len(test))*100).round(2), '%')

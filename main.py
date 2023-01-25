@@ -21,14 +21,14 @@ def get_result(pathname):
     return theta_opti  
 
 
-def main_iris(trained):
+def main_iris(trained, IBMQ):
     if trained:
         theta_opti = Iris.train_iris()
         save_results("results/iris_result.txt", theta_opti)
     else:
         theta_opti = get_result("results/iris_result.txt")
     
-    Iris.get_iris_accuracy(theta_opti)
+    Iris.get_iris_accuracy(theta_opti, IBMQ)
 
 def main_XOR(trained):
     if trained:
@@ -60,10 +60,10 @@ def main_quaternary(trained):
 def main():
     
     
-    #main_iris(False)
+    #main_iris(False, True)
     #main_XOR(False)
-    main_skin(True)
-    #main_quaternary(True)
+    #main_skin(False)
+    main_quaternary(True)
     
     return
    

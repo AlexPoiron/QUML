@@ -15,7 +15,7 @@ qs = qiskit.Aer.get_backend('qasm_simulator')
 
 class Quaternary:
     def __init__(self):
-        pass
+        self.name = "Quaternary"
 
     def get_dict(self):
         return {
@@ -64,7 +64,7 @@ class Quaternary:
         qc.measure(range(2), range(2))
         
         job = qiskit.execute(qc, shots=NSHOTS, backend=qs)
-        c = job.result().get_counts()        
+        c = job.result().get_counts()       
         return c
 
     def get_df(self):
