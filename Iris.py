@@ -1,46 +1,48 @@
 import numpy as np
 import pandas as pd
 import qiskit
-from sklearn.model_selection import train_test_split
-import time
-import Classifier
+from problem import Problem, rescaleFeature
 
-ALPHA = 0.1
-QUANTILE = 3
-TEST_SIZE = 0.4
-TRAIN_SIZE = 0.6
+#Values used to execute the quantum circuit
 NSHOTS = 400
-TOKEN = "73547946bd0f7f1e1b48368ac35872c76b8bd0100e1e84ea0411076c44208af1127b3b69f345e138c07b03c36809afba05d2e5d9aa1eac3e4d352be42575af06"
 qs = qiskit.Aer.get_backend('qasm_simulator')
 
-def standardise(x):
-    return (x-np.mean(x))/np.std(x)
+#Token used for the IBMQ circuits
+TOKEN = "73547946bd0f7f1e1b48368ac35872c76b8bd0100e1e84ea0411076c44208af1127b3b69f345e138c07b03c36809afba05d2e5d9aa1eac3e4d352be42575af06"
 
-def rescaleFeature(x):
-    return (1-ALPHA/2)*(np.pi/QUANTILE)*standardise(x)
 
-class Iris:
-    def __init__(self, pathname):
-        self.path = pathname
+class Iris(Problem):
+    """Iris class corresponding to the 1st problem in the paper.
+
+    Args:
+        Problem (class): The super class
+    """
+    def __init__(self):
+        super().__init__()
+        self.path_data = "data/iris_csv.csv"
         self.name = "Iris"
-    
-    def get_pathname(self):
-        return self.path
-    
+        self.theta_init = np.random.uniform(0, 2*np.pi, 8)
+  
     def get_dict(self):
+        """Get the dictionnary corresponding to the problem
+        
+        """
         return {
         "Iris-setosa" : "00",
         "Iris-versicolor" : "01",
         "Iris-virginica" : "10",
-        }
+        }   
     
-    #Inverse the dict
-    def get_dicinv(self):
-        dict = self.get_dict()
-        dicinv = {dict[k] : k for k in dict} 
-        return dicinv    
-    
-    def build_circuit(self, theta, omega):
+    def build_circuit(self, theta: np.ndarray, omega: pd.Series) -> qiskit.QuantumCircuit:
+        """Build the quantum circuit corresponding to the problem
+
+        Args:
+            theta (np.ndarray): the optimized parameter found in the training
+            omega (pd.Series): row on the test_set
+
+        Returns:
+            Return the qunatum circuit built.
+        """
         qc = qiskit.QuantumCircuit(2,2)
         for i in range(4):
             if i : qc.cz(0, 1)
@@ -59,18 +61,36 @@ class Iris:
             qc.rx(np.pi/2, 1)
         return qc
     
-    def prediction_dict(self, theta, omega):
+    def prediction_dict(self, theta: np.ndarray, omega: pd.Series) -> qiskit.result.counts.Counts:
+        """Get the measurement of our quantum circuit. This measurement gives a count on each possible output possible
+
+        Args:
+            theta (np.ndarray): the optimized parameter obtained with the training
+            omega (pd.Series): row on the test set
+
+        Returns:
+            A qiskit object that is auite similar to a dictionnary with counts on each output qbits.
+        """
         qc = self.build_circuit(theta, omega)
         qc.measure(range(2), range(2))
         
         job = qiskit.execute(qc, shots=NSHOTS, backend=qs)
         c = job.result().get_counts()
         c.pop('11', None)
-        
+
         return c
     
-    
-    def prediction_dict_IBMQ(self, theta, omega):
+    def prediction_dict_IBMQ(self, theta: np.ndarray, omega: pd.Series) -> qiskit.result.counts.Counts:
+        """Get the measurement of our quantum circuit. This measurement gives a count on each possible output possible. This, time
+           we use online quantum material.
+
+        Args:
+            theta (np.ndarray): the optimized parameter obtained with the training
+            omega (pd.Series): row on the test set
+
+        Returns:
+            A qiskit object that is auite similar to a dictionnary with counts on each output qbits.
+        """
         qiskit.IBMQ.save_account(TOKEN, overwrite=True) 
         provider = qiskit.IBMQ.load_account()
         backend = qiskit.providers.ibmq.least_busy(provider.backends())
@@ -89,64 +109,14 @@ class Iris:
         return res
     
     def get_df(self):
-        path = self.get_pathname()
+        """Create a Pandas Dataframe
+
+        Returns:
+            the Dataframe
+        """
+        path = self.path_data
         df = pd.read_csv(path)
         attributes = df.columns[:-1]
         for x in attributes:
             df[x] = rescaleFeature(df[x])
-        return df
-    
-    def get_sets(self):
-        train_set, test_set = train_test_split(self.get_df(), test_size=TEST_SIZE, train_size=TRAIN_SIZE)
-        train_set, test_set = pd.DataFrame(train_set), pd.DataFrame(test_set)
-        
-        return train_set, test_set
-
-def define_iris():
-    #Init Iris Class
-    iris = Iris("data/iris_csv.csv")
-    
-    #Get useful informations
-    df = iris.get_df()
-    dict_qbits = iris.get_dict()
-    train_set, test_set = iris.get_sets()
-    theta_init = np.random.uniform(0, 2*np.pi, 8)
-    
-    parameters = {
-        "df" : df, 
-        "dict_qbits" : dict_qbits,
-        "train_set" : train_set,
-        "test_set" : test_set,
-        "theta_init" : theta_init,
-        "iris" :iris
-        }
-    
-    #Init Classifier
-    classifier_iris = Classifier.Classifier()
-    return classifier_iris, parameters
-
-def train_iris():
-    classifier_iris, parameters = define_iris()
-    print("Training the model...")
-    start = time.time()
-    
-    theta_opti = classifier_iris.train(
-        parameters["train_set"], 
-        parameters["theta_init"], 
-        parameters["dict_qbits"], 
-        parameters["df"], 
-        parameters["iris"]
-    )
-    
-    end = time.time()
-    minutes, seconds = divmod(end-start, 60)
-    print("Training duration: {:0>2}min{:05.2f}s".format(int(minutes),seconds))
-    return theta_opti
-
-def get_iris_accuracy(theta_opti, IBMQ):
-    classifier_iris, parameters = define_iris()
-    dicinv = parameters["iris"].get_dicinv()
-    classifier_iris.accuracy(parameters["iris"], theta_opti, parameters["test_set"], dicinv, IBMQ)
-    return
-        
-    
+        return df   

@@ -1,38 +1,39 @@
 import numpy as np
 import pandas as pd
 import qiskit
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-import time
-import Classifier
-
 from proglearn.sims import generate_gaussian_parity
+from problem import Problem, rescaleFeature
 
-ALPHA = 0.1
-QUANTILE = 3
-TEST_SIZE = 0.4
-TRAIN_SIZE = 0.6
+
 NSHOTS = 400
 qs = qiskit.Aer.get_backend('qasm_simulator')
 
-def standardise(x):
-    return (x-np.mean(x))/np.std(x)
+class XOR(Problem):
+    """XOR class corresponding to the 2nd problem in the paper.
 
-def rescaleFeature(x):
-    return (1-ALPHA/2)*(np.pi/QUANTILE)*standardise(x)
-
-class XOR:
+    Args:
+        Problem (class): The super class
+    """
     def __init__(self):
+        super().__init__()
         self.name = "XOR"
+        self.theta_init = np.random.uniform(0, 2*np.pi, 4)
     
     def get_dict(self):
+        """Get the dictionnary corresponding to the problem
+        
+        """
         return {
         "1" : ["10","01"],
         "0" : ["00","11"]
         }
     
-    #Dict in reverse
-    def get_dicinv(self):
+    def get_dicinv_XOR(self):
+        """Get the inverted dictionnary from the original dictionnary. We have here a specification for the XOR one
+
+        Returns:
+            the inverted dictionnary
+        """
         dict = self.get_dict()
         dicinv = {}
         for k in dict:
@@ -40,8 +41,16 @@ class XOR:
                 dicinv.update({i : k})
         return dicinv
 
-    #Generic methods for build a ciruict and measure it
     def build_circuit(self, theta, omega):
+        """Build the quantum circuit corresponding to the problem
+
+        Args:
+            theta (np.ndarray): the optimized parameter found in the training
+            omega (pd.Series): row on the test_set
+
+        Returns:
+            Return the qunatum circuit built.
+        """
         qc = qiskit.QuantumCircuit(2)
         qc.rx(np.pi/2, 0)
         qc.rx(np.pi/2, 1)
@@ -66,6 +75,15 @@ class XOR:
         return qc
     
     def prediction_dict(self, theta, omega):
+        """Get the measurement of our quantum circuit. This measurement gives a count on each possible output possible
+
+        Args:
+            theta (np.ndarray): the optimized parameter obtained with the training
+            omega (pd.Series): row on the test set
+
+        Returns:
+            A qiskit object that is auite similar to a dictionnary with counts on each output qbits.
+        """
         qc = qiskit.QuantumCircuit(2, 2)
         qc.append(self.build_circuit(theta, omega), range(2))
         qc.measure(range(2), range(2))
@@ -76,6 +94,11 @@ class XOR:
         return c
     
     def get_df(self):
+        """Create a Pandas Dataframe
+
+        Returns:
+            the Dataframe
+        """
         X_rxor, y_rxor = generate_gaussian_parity(1000, angle_params=np.pi / 4)
         X_rxor0 = [values[0] for values in X_rxor]
         X_rxor1 = [values[1] for values in X_rxor]
@@ -84,57 +107,3 @@ class XOR:
                      'class' : [str(value) for value in y_rxor]} 
         df = pd.DataFrame(list_dict)
         return df
-    
-    def get_sets(self):
-        train_set, test_set = train_test_split(self.get_df(), test_size=TEST_SIZE, train_size=TRAIN_SIZE)
-        train_set, test_set = pd.DataFrame(train_set), pd.DataFrame(test_set)
-        return train_set, test_set
-
-def define_XOR():
-    #Init XOR Class
-    xor = XOR()
-    
-    #Get useful informations
-    df = xor.get_df()
-    dict_qbits = xor.get_dict()
-    train_set, test_set = xor.get_sets()
-    theta_init = np.random.uniform(0, 2*np.pi, 4)
-    
-    parameters = {
-        "df" : df, 
-        "dict_qbits" : dict_qbits,
-        "train_set" : train_set,
-        "test_set" : test_set,
-        "theta_init" : theta_init,
-        "xor" :xor
-        }
-    
-    #Init Classifier
-    classifier_xor = Classifier.Classifier()
-    return classifier_xor, parameters
-
-def train_XOR():
-    classifier_xor, parameters = define_XOR()
-    print("Training the model...")
-    start = time.time()
-    
-    theta_opti = classifier_xor.train(
-        parameters["train_set"], 
-        parameters["theta_init"], 
-        parameters["dict_qbits"], 
-        parameters["df"], 
-        parameters["xor"]
-    )
-    
-    end = time.time()
-    minutes, seconds = divmod(end-start, 60)
-    print("Training duration: {:0>2}min{:05.2f}s".format(int(minutes),seconds))
-    return theta_opti
-
-    #save_results("results/iris_result.txt", theta_opti)
-
-def get_XOR_accuracy(theta_opti):
-    classifier_xor, parameters = define_XOR()
-    dicinv = parameters["xor"].get_dicinv()
-    classifier_xor.accuracy(parameters["xor"], theta_opti, parameters["test_set"], dicinv)
-
