@@ -1,14 +1,14 @@
 import numpy as np
 import qiskit 
-import pandas as pd
 import scipy as sp
-import Iris
-import XOR
+
 
 NSHOTS = 400
 qs = qiskit.Aer.get_backend('qasm_simulator')
 
 class Classifier:
+    """Classifier class. This is in this class that we define methods used for training, final prediciton and accuracy
+    """
     def __init__(self):
         pass
     
@@ -19,7 +19,7 @@ class Classifier:
             label = dict[df["class"]]
             
             c = problem.prediction_dict(theta, omega)
-            
+
             if type(label) == list:
                 label = label[0]
                 
@@ -35,7 +35,7 @@ class Classifier:
         lambda data : loss(theta, data, attributes, problem),
         axis=1
         )
-        print(s.mean())
+        #print(s.mean())
         return s.mean()
     
     #Train method

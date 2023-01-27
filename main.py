@@ -1,12 +1,18 @@
-import Iris
-import XOR
-import Skin
-import Quaternary
+import iris
+import xor
+import skin
+import quaternary
+
 import numpy as np
 
-#Save theta_opti in a result file. In this way, we can dierctly compute the accuravy with the optimized parameter without execute
-# the train method.
-def save_results(pathname, theta_opti):
+def save_results(pathname: str, theta_opti: np.ndarray) -> None:
+    """Save theta_opti in a result file. In this way, we can dierctly compute the accuracy with the 
+    optimized parameter without execute the train method.
+
+    Args:
+        pathname (str): the pathname where we want to save our optimized parameter
+        theta_opti (np.ndarray): the optimized parameter
+    """
     f = open(pathname, "w")
     for i in range(theta_opti.size-1):
         f.write(str(theta_opti[i])+' ')
@@ -14,61 +20,76 @@ def save_results(pathname, theta_opti):
     f.write(str(theta_opti[theta_opti.size-1]))
     f.close()
     
-def get_result(pathname):
+def get_result(pathname: str) -> np.ndarray:
+    """Get the optimized parameter from the corresponding problem file
+
+    Args:
+        pathname (str): The file pathname
+
+    Returns:
+        the optimized parameter called theta_opti
+    """
     f = open(pathname, "r")
     theta_opti = np.fromstring(f.readline(), dtype=float, sep=' ')
     f.close
     return theta_opti  
 
 
-def main_iris(trained, IBMQ):
-    if trained:
-        theta_opti = Iris.train_iris()
-        save_results("results/iris_result.txt", theta_opti)
-    else:
-        theta_opti = get_result("results/iris_result.txt")
-    
-    Iris.get_iris_accuracy(theta_opti, IBMQ)
+def get_correct_problem(problem_name: str) -> object:
+    """Get the correct problem object following the name given
 
-def main_XOR(trained):
-    if trained:
-        theta_opti = XOR.train_XOR()
-        save_results("results/XOR_result.txt", theta_opti)
-    else:
-        theta_opti = get_result("results/XOR_result.txt")
-    
-    XOR.get_XOR_accuracy(theta_opti)
+    Args:
+        problem_name (str): The name of the problem 
 
-def main_skin(trained):
-    if trained:
-        theta_opti = Skin.train_skin()
-        save_results("results/Skin_result.txt", theta_opti)
-    else:
-        theta_opti = get_result("results/Skin_result.txt")
+    Returns:
+        The correct problem object created
+    """
+    problem = None
     
-    Skin.get_skin_accuracy(theta_opti)
+    if problem_name == "Iris":
+        problem = iris.Iris()
+    
+    elif problem_name == "XOR":
+        problem = xor.XOR()
+    
+    elif problem_name == "Skin":
+        problem = skin.Skin()
+    
+    else:
+        problem = quaternary.Quaternary()
+    
+    return problem
 
-def main_quaternary(trained):
-    if trained:
-        theta_opti = Quaternary.train_quaternary()
-        save_results("results/Quaternary_result.txt", theta_opti)
-    else:
-        theta_opti = get_result("results/Quaternary_result.txt")
+def execute_problem(problem: object, problem_name: str,  trained: bool, IBQM: bool) -> None:
+    """Execute one of the 4 problems. Possibility to train the model or use an online quantic material with
+       IBMQ. This function return always the accuracy on the test set.
+
+    Args:
+        problem (object): The problem we want to execute. 
+        id_problem (int): Corresponding value to the problem in the dictionnary
+        trained (bool): Boolean value set to True if we want to train the model before gets the accuracy.
+        IBQM (bool): Boolean value set to True if we want to use online quantic material.
+    """
+    problem = get_correct_problem(problem_name)
+    path = "results/" + problem_name + "_result.txt"
     
-    Quaternary.get_quaternary_accuracy(theta_opti)
+    if trained:
+        theta_opti = problem.launch_train(problem, problem_name)
+        save_results(path, theta_opti)
+    else:
+        theta_opti = get_result(path)
+    
+    problem.get_accuracy(problem, problem_name, theta_opti, IBQM)
+        
+        
+# Reference list
+PROBLEMS = ["Iris", "XOR", "Skin","Quaternary"]
 
 def main():
     
-    
-    #main_iris(False, True)
-    #main_XOR(False)
-    #main_skin(False)
-    main_quaternary(True)
-    
+    problem = get_correct_problem("Iris")
+    execute_problem(problem, "Iris", trained=False, IBQM=False)
     return
    
-    
-    
-
 if __name__ == "__main__":
     main()
