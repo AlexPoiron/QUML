@@ -4,3 +4,6 @@ Acurracy of the Iris circuit: 98.33000000000001%
 --------------------
 Compute the accuracy...
 Acurracy of the Iris circuit: 90.0%
+--------------------
+Compute the accuracy...
+Acurracy of the Iris circuit: 77.999%

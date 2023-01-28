@@ -59,8 +59,8 @@ PROBLEMS = ["Iris", "XOR", "Skin","Quaternary"]
 
 def main():
     
-    problem = get_correct_problem("Quaternary")
-    execute_problem(problem, trained=True, IBQM=False)
+    problem = get_correct_problem("XOR")
+    execute_problem(problem, trained=False, IBQM=False)
     return
    
 if __name__ == "__main__":
