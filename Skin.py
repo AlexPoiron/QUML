@@ -3,8 +3,10 @@ import pandas as pd
 import qiskit
 from problem import Problem, rescaleFeature
 
-NSHOTS = 400
+NSHOTS = 1500
 qs = qiskit.Aer.get_backend('qasm_simulator')
+#Token used for the IBMQ circuits
+TOKEN = "73547946bd0f7f1e1b48368ac35872c76b8bd0100e1e84ea0411076c44208af1127b3b69f345e138c07b03c36809afba05d2e5d9aa1eac3e4d352be42575af06"
 
 class Skin(Problem):
     """Skin class corresponding to the 3rd problem in the paper.
@@ -16,6 +18,7 @@ class Skin(Problem):
         super().__init__()
         self.path = "Skin_NonSkin.txt"
         self.name = "Skin"
+        self.has_trained = False
         self.theta_init = np.random.uniform(0, 2*np.pi, 6)
 
     def get_dict(self):
@@ -89,15 +92,45 @@ class Skin(Problem):
         
         job = qiskit.execute(qc, shots=NSHOTS, backend=qs)
         c = job.result().get_counts()
+        res ={'000':0,'111':0}
+        for key in c:
+            res[key] = c[key]
+        return res
+    
+    def prediction_dict_IBMQ(self, theta: np.ndarray, omega: pd.Series) -> qiskit.result.counts.Counts:
+        """Get the measurement of our quantum circuit. This measurement gives a count on each possible output possible. This, time
+           we use online quantum material.
+
+        Args:
+            theta (np.ndarray): the optimized parameter obtained with the training
+            omega (pd.Series): row on the test set
+
+        Returns:
+            A qiskit object that is auite similar to a dictionnary with counts on each output qbits.
+        """
+        qiskit.IBMQ.save_account(TOKEN, overwrite=True) 
+        provider = qiskit.IBMQ.load_account()
+        backend = qiskit.providers.ibmq.least_busy(provider.backends())
+
+        qc = qiskit.QuantumCircuit(3, 3)
+        qc.append(self.build_circuit(theta, omega), range(3))
+        qc.measure(range(3), range(3))
+
+        mapped_circuit = qiskit.transpile(qc, backend=backend)
+        qobj = qiskit.assemble(mapped_circuit, backend=backend, shots=NSHOTS)
+
+        job = backend.run(qobj)
+        print(job.status())
+        res = job.result().get_counts()
         rem_keys = ["001", "010","011", "100", "101", "110"]
         for key in rem_keys:
-            if key in c:
-                c.pop(key)
+            if key in res:
+                res.pop(key)
 
-        if(c == {}):
-            c.update({"000": 0, "111" : 0})
-        
-        return c
+        if(res == {}):
+            res.update({"000": 0, "111" : 0})
+
+        return res
 
     def get_df(self):
         """Create a Pandas Dataframe
@@ -105,7 +138,7 @@ class Skin(Problem):
         Returns:
             the Dataframe
         """
-        path = self.get_pathname()
+        path = "data/" + self.path
         colnames = ['B', 'G', 'R', 'class']
         df = pd.read_csv(path, sep="\t",names=colnames, header=None)
         df['class'] = df['class'].apply(str)

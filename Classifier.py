@@ -1,9 +1,10 @@
 import numpy as np
 import qiskit 
 import scipy as sp
+import swifter
+from utils import create_logs
 
-
-NSHOTS = 400
+NSHOTS = 1500
 qs = qiskit.Aer.get_backend('qasm_simulator')
 
 class Classifier:
@@ -18,27 +19,46 @@ class Classifier:
             omega = df[attributes].values
             label = dict[df["class"]]
             c = problem.prediction_dict(theta, omega)
+            #print("c = ", c)
             if type(label) == list:
                 label = label[0]
                 
             if label in c:
                 e = np.exp(c[label]/NSHOTS)
-            else :
+            else:
                 e = 1
+            #print("e = ", e)
+            
             s = np.exp(np.array(list(c.values()))/NSHOTS).sum()
+            #print("s =", s)
             return -np.log(e/s)
         
         attributes = df.columns[:-1]
-        s = batch.apply(
+        s = batch.swifter.apply(
         lambda data : loss(theta, data, attributes, problem),
         axis=1
         )
+        #print("mean s: ", s.mean())
+        print("Loss value:", s.mean())
+        
+        #Save loss value in the logs
+        log = "Loss value: " + str(s.mean())
+        create_logs(problem.name, True, [log])
+
         return s.mean()
     
     #Train method
     def train(self, train_set, theta_init, dict, df, problem):
-        opt = sp.optimize.minimize(fun = lambda theta : self.loss_batch(theta, train_set, dict, df, problem), x0=theta_init, method='COBYLA', tol=1e-3)
+        opt = sp.optimize.minimize(fun = lambda theta : self.loss_batch(theta, train_set, dict, df, problem), x0=theta_init, method='COBYLA', tol=1e-4)
+        print("-"*20)
         print("Optimal parameter Theta:", opt.x)
+        
+        #Save optimal parameter in the logs
+        logs = ["-"*20, "Optimal parameter Theta: " + str(opt.x)]
+        create_logs(problem.name, True, logs)
+        
+        problem.has_trained = True
+        
         return opt.x
     
 
@@ -49,13 +69,26 @@ class Classifier:
         #If we decide to use online quantic material
         if IBMQ:
             return argmaxDict(problem.prediction_dict_IBMQ(theta, omega))
-        
         return argmaxDict(problem.prediction_dict(theta, omega))
 
 
     #Accuracy method
     def accuracy(self, problem, theta_opti, test, dicinv, IBMQ):
-        print("Compute the accuracy...")
-        test["predicted"] = test.apply(lambda row : dicinv[self.prediction(theta_opti, row, problem, IBMQ)], axis=1)
         
-        print("Acurracy of the", problem.name, "circuit: ", ((sum(np.array(test["class"] == test["predicted"]))/len(test))*100).round(2), '%')
+        print("-"*20)
+        print("Compute the accuracy...")
+        nb = 10
+        accuracies = []
+        for _ in range(nb):
+            test["predicted"] = test.apply(lambda row : dicinv[self.prediction(theta_opti, row, problem, IBMQ)], axis=1)
+            acc = ((sum(np.array(test["class"] == test["predicted"]))/len(test))*100).round(2)
+            accuracies.append(acc)
+            
+        total_accuracy = sum(accuracies) / nb
+        
+        #Save the accuracy in the logs
+        logs = ["-"*20, "Compute the accuracy..."]
+        logs.append("Acurracy of the " + problem.name + " circuit: " + str(total_accuracy) + "%")
+        create_logs(problem.name, problem.has_trained, logs)
+          
+        print("Acurracy of the", problem.name, "circuit: ", sum(accuracies) / nb, '%')

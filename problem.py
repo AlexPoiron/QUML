@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 import time
 from typing import Tuple
 
+from utils import create_logs
 import Classifier
 
 #Used to normalized data
@@ -65,12 +66,12 @@ class Problem:
         
         return train_set, test_set
 
-    def initialize(self, problem: object, problem_name: str) -> Tuple:
+    def initialize(self, problem: object) -> Tuple:
         """Initialize a classifier and the parameters of the problem object given. 
 
         Args:
             problem (object): the corresponding problem
-            problem_name (str): problem name
+
 
         Returns:
             A tuple with a new classifier created and the parameters initialized
@@ -88,23 +89,23 @@ class Problem:
             "train_set" : train_set,
             "test_set" : test_set,
             "theta_init" : theta_init,
-            problem_name : problem
+            problem.name : problem
             }
         
         return classifier, parameters
 
-    def launch_train(self, problem: object, problem_name: str) -> np.ndarray:
+    def launch_train(self, problem: object) -> np.ndarray:
         """Launch the training and print the time duration.
 
         Args:
             problem (object): the corresponding problem object
-            problem_name (str): name of the problem
 
         Returns:
             the optimized parameter
         """
-        classifier, parameters = self.initialize(problem, problem_name)
-        print("Training the model...")
+        print("Training model...")
+        create_logs(problem.name, True, ["Training model..."])
+        classifier, parameters = self.initialize(problem)
         start = time.time()
         
         theta_opti = classifier.train(
@@ -112,32 +113,35 @@ class Problem:
             parameters["theta_init"], 
             parameters["dict_qbits"], 
             parameters["df"], 
-            parameters[problem_name]
+            parameters[problem.name]
         )
         
         end = time.time()
         minutes, seconds = divmod(end-start, 60)
-        print("Training duration: {:0>2}min{:05.2f}s".format(int(minutes),seconds))
+        
+        #Save the training duration in the logs
+        logs = ["-"*20, "Training duration: {:0>2}min{:05.2f}s".format(int(minutes),seconds)]
+        create_logs(problem.name, True, logs)
+        
         return theta_opti
 
-    def get_accuracy(self, problem: object, problem_name: str, theta_opti: np.ndarray, IBMQ: bool) -> None:
+    def get_accuracy(self, problem: object, theta_opti: np.ndarray, IBMQ: bool) -> None:
         """Print on the terminal the accuracy obtained on the test set.
 
         Args:
             problem (object): the problem object
-            problem_name (str): name of the problem
             theta_opti (np.ndarray): optimized parameter
             IBMQ (bool): boolean value set to True if we want to use online quantum material
         """
-        classifier, parameters = self.initialize(problem, problem_name)
+        classifier, parameters = self.initialize(problem)
         
-        if problem_name == "XOR":
-            dicinv = parameters[problem_name].get_dicinv_XOR()
+        if problem.name == "XOR":
+            dicinv = parameters[problem.name].get_dicinv_XOR()
         
         else:
-            dicinv = parameters[problem_name].get_dicinv()    
+            dicinv = parameters[problem.name].get_dicinv()    
         
-        classifier.accuracy(parameters[problem_name], theta_opti, parameters["test_set"], dicinv, IBMQ)
+        classifier.accuracy(parameters[problem.name], theta_opti, parameters["test_set"], dicinv, IBMQ)
         return
         
     

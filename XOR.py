@@ -5,8 +5,10 @@ from proglearn.sims import generate_gaussian_parity
 from problem import Problem, rescaleFeature
 
 
-NSHOTS = 400
+NSHOTS = 1500
 qs = qiskit.Aer.get_backend('qasm_simulator')
+#Token used for the IBMQ circuits
+TOKEN = "73547946bd0f7f1e1b48368ac35872c76b8bd0100e1e84ea0411076c44208af1127b3b69f345e138c07b03c36809afba05d2e5d9aa1eac3e4d352be42575af06"
 
 class XOR(Problem):
     """XOR class corresponding to the 2nd problem in the paper.
@@ -17,6 +19,7 @@ class XOR(Problem):
     def __init__(self):
         super().__init__()
         self.name = "XOR"
+        self.has_trained = False
         self.theta_init = np.random.uniform(0, 2*np.pi, 4)
     
     def get_dict(self):
@@ -89,9 +92,39 @@ class XOR(Problem):
         qc.measure(range(2), range(2))
         
         job = qiskit.execute(qc, shots=NSHOTS, backend=qs)
+        res = {'10':0, '01':0,'00':0, '11':0}
         c = job.result().get_counts()
-        
-        return c
+        for key in c:
+            res[key] = c[key]
+        return res
+    
+    def prediction_dict_IBMQ(self, theta: np.ndarray, omega: pd.Series) -> qiskit.result.counts.Counts:
+        """Get the measurement of our quantum circuit. This measurement gives a count on each possible output possible. This, time
+           we use online quantum material.
+
+        Args:
+            theta (np.ndarray): the optimized parameter obtained with the training
+            omega (pd.Series): row on the test set
+
+        Returns:
+            A qiskit object that is auite similar to a dictionnary with counts on each output qbits.
+        """
+        qiskit.IBMQ.save_account(TOKEN, overwrite=True) 
+        provider = qiskit.IBMQ.load_account()
+        backend = qiskit.providers.ibmq.least_busy(provider.backends())
+
+        qc = qiskit.QuantumCircuit(2, 2)
+        qc.append(self.build_circuit(theta, omega), range(2))
+        qc.measure(range(2), range(2))
+
+        mapped_circuit = qiskit.transpile(qc, backend=backend)
+        qobj = qiskit.assemble(mapped_circuit, backend=backend, shots=NSHOTS)
+
+        job = backend.run(qobj)
+        print(job.status())
+        res = job.result().get_counts()
+
+        return res
     
     def get_df(self):
         """Create a Pandas Dataframe
@@ -106,4 +139,7 @@ class XOR(Problem):
                      'Values1' : X_rxor1,
                      'class' : [str(value) for value in y_rxor]} 
         df = pd.DataFrame(list_dict)
+        attributes = df.columns[:-1]
+        for x in attributes:
+            df[x] = rescaleFeature(df[x])
         return df

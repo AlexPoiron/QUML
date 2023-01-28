@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 import qiskit
+import collections
 from problem import Problem, rescaleFeature
 
 #Values used to execute the quantum circuit
-NSHOTS = 400
+NSHOTS = 1500
 qs = qiskit.Aer.get_backend('qasm_simulator')
 
 #Token used for the IBMQ circuits
@@ -21,6 +22,7 @@ class Iris(Problem):
         super().__init__()
         self.path_data = "data/iris_csv.csv"
         self.name = "Iris"
+        self.has_trained = False
         self.theta_init = np.random.uniform(0, 2*np.pi, 8)
   
     def get_dict(self):
@@ -73,12 +75,13 @@ class Iris(Problem):
         """
         qc = self.build_circuit(theta, omega)
         qc.measure(range(2), range(2))
-        
         job = qiskit.execute(qc, shots=NSHOTS, backend=qs)
+        res = {'00':0, '01':0,'10':0}
         c = job.result().get_counts()
-        c.pop('11', None)
-
-        return c
+        for key in c:
+            res[key] = c[key]
+        res.pop('11', None)
+        return res
     
     def prediction_dict_IBMQ(self, theta: np.ndarray, omega: pd.Series) -> qiskit.result.counts.Counts:
         """Get the measurement of our quantum circuit. This measurement gives a count on each possible output possible. This, time
