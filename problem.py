@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 import time
 from typing import Tuple
 
-import classifier
+import Classifier
 
 #Used to normalized data
 ALPHA = 0.1 
@@ -75,7 +75,7 @@ class Problem:
         Returns:
             A tuple with a new classifier created and the parameters initialized
         """
-        classifier = classifier.Classifier()
+        classifier = Classifier.Classifier()
         
         df = problem.get_df()
         dict_qbits = problem.get_dict()

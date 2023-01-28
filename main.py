@@ -1,7 +1,7 @@
-import iris
-import xor
-import skin
-import quaternary
+import Iris
+import XOR
+import Skin
+import Quaternary
 
 import numpy as np
 
@@ -47,16 +47,16 @@ def get_correct_problem(problem_name: str) -> object:
     problem = None
     
     if problem_name == "Iris":
-        problem = iris.Iris()
+        problem = Iris.Iris()
     
     elif problem_name == "XOR":
-        problem = xor.XOR()
+        problem = XOR.XOR()
     
     elif problem_name == "Skin":
-        problem = skin.Skin()
+        problem = Skin.Skin()
     
     else:
-        problem = quaternary.Quaternary()
+        problem = Quaternary.Quaternary()
     
     return problem
 
@@ -87,8 +87,8 @@ PROBLEMS = ["Iris", "XOR", "Skin","Quaternary"]
 
 def main():
     
-    problem = get_correct_problem("Iris")
-    execute_problem(problem, "Iris", trained=False, IBQM=False)
+    problem = get_correct_problem("Quaternary")
+    execute_problem(problem, "Quatenary", trained=True, IBQM=False)
     return
    
 if __name__ == "__main__":

@@ -17,9 +17,7 @@ class Classifier:
         def loss(theta, df, attributes, problem):
             omega = df[attributes].values
             label = dict[df["class"]]
-            
             c = problem.prediction_dict(theta, omega)
-
             if type(label) == list:
                 label = label[0]
                 
@@ -35,7 +33,6 @@ class Classifier:
         lambda data : loss(theta, data, attributes, problem),
         axis=1
         )
-        #print(s.mean())
         return s.mean()
     
     #Train method

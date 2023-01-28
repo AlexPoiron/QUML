@@ -90,7 +90,13 @@ class Quaternary(Problem):
         Returns:
             the Dataframe
         """
-        X,y = make_classification(n_samples=5000, n_features=4)
+        X, y = make_classification(
+            n_samples=5000,  
+            n_features=4,
+            n_informative=3,
+            n_redundant=0,
+            n_classes=4,
+        )
         df = pd.DataFrame(X)
         df['class'] = y
         df['class'] = df['class'].astype(str)
