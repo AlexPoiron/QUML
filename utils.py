@@ -50,4 +50,16 @@ def create_logs(problem_name: str, trained: bool, logs: list) -> None:
         f.write(log + "\n")
     
     f.close
+
+def create_logs_circuit(problem: object) -> None:
+    """Write in a log file the quatum circuit used to solve the given problem.
     
+    Args:
+        problem (object): the according problem
+    
+    """
+    pathname = "logs/" + problem.name + "_circuit.txt"
+    
+    f = open(pathname, "w")
+    f.write(str(problem.circuit.draw()))
+    f.close

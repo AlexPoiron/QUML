@@ -4,3 +4,6 @@ Acurracy of the Skin circuit: 80.15%
 --------------------
 Compute the accuracy...
 Acurracy of the Skin circuit: 75.5%
+--------------------
+Compute the accuracy...
+Acurracy of the Skin circuit: 75.4%

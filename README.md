@@ -10,7 +10,7 @@ We decided to implement this project through different **Python script**, instea
 ## Architecture
 At the root we have **3 folders** :
 - data : Datasets used for the different problems
-- logs : Folder that contains logs when we try to solve a problem with inside loss values through iterations, values of the optimized parameter obtained after the training and the accuracy on the test set.
+- logs : Folder that contains logs when we try to solve a problem with inside loss values through iterations, values of the optimized parameter obtained after the training and the accuracy on the test set. We also have for each problem a file where its quantum circuit is drawed.
 - results : Values of the optimized parameter used when we want to get the accuracy without launch a training session
 
 With these 3 folders, we have **Python files** where we have:
@@ -22,4 +22,4 @@ With these 3 folders, we have **Python files** where we have:
 ## How to use the project and run an example
 To launch the projet, you can follow the example commented  in the main function or follow these steps:
 - create a problem with the function **get_correct_problem()** with the corresponding name : Iris, XOR, Skin or Quaternary
-- use the function called **execute_problem()** to execute the problem. You give the parameter problem that you just created, a boolean if you want to do a training and another boolean if you want to use quantum material online with IBQM.
+- use the function called **execute_problem()** to execute the problem. You give the parameter problem that you just created, a boolean if you want to do a training and another boolean if you want to use quantum material online with IBMQ.

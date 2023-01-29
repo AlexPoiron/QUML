@@ -19,7 +19,6 @@ class XOR(Problem):
     def __init__(self):
         super().__init__()
         self.name = "XOR"
-        self.has_trained = False
         self.theta_init = np.random.uniform(0, 2*np.pi, 4)
     
     def get_dict(self):
@@ -75,6 +74,8 @@ class XOR(Problem):
         qc.rz(theta[3], 1)
         qc.rx(np.pi/2, 0)
         qc.rx(np.pi/2, 1)
+        
+        self.circuit = qc
         return qc
     
     def prediction_dict(self, theta, omega):

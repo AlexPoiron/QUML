@@ -18,7 +18,6 @@ class Skin(Problem):
         super().__init__()
         self.path = "Skin_NonSkin.txt"
         self.name = "Skin"
-        self.has_trained = False
         self.theta_init = np.random.uniform(0, 2*np.pi, 6)
 
     def get_dict(self):
@@ -74,6 +73,8 @@ class Skin(Problem):
         qc.rz(theta[5], 2)
         qc.rx(np.pi/2, 1)
         qc.rx(np.pi/2, 2)
+        
+        self.circuit = qc
         return qc
     
     def prediction_dict(self, theta, omega):

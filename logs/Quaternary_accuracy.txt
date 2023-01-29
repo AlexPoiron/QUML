@@ -1,0 +1,3 @@
+--------------------
+Compute the accuracy...
+Acurracy of the Quaternary circuit: 21.955%

@@ -22,7 +22,6 @@ class Iris(Problem):
         super().__init__()
         self.path_data = "data/iris_csv.csv"
         self.name = "Iris"
-        self.has_trained = False
         self.theta_init = np.random.uniform(0, 2*np.pi, 8)
   
     def get_dict(self):
@@ -61,6 +60,8 @@ class Iris(Problem):
             qc.rz(theta[2*i+1], 1)
             qc.rx(np.pi/2, 0)
             qc.rx(np.pi/2, 1)
+        
+        self.circuit = qc
         return qc
     
     def prediction_dict(self, theta: np.ndarray, omega: pd.Series) -> qiskit.result.counts.Counts:
@@ -75,12 +76,15 @@ class Iris(Problem):
         """
         qc = self.build_circuit(theta, omega)
         qc.measure(range(2), range(2))
+        
         job = qiskit.execute(qc, shots=NSHOTS, backend=qs)
+        
         res = {'00':0, '01':0,'10':0}
         c = job.result().get_counts()
         for key in c:
             res[key] = c[key]
         res.pop('11', None)
+        
         return res
     
     def prediction_dict_IBMQ(self, theta: np.ndarray, omega: pd.Series) -> qiskit.result.counts.Counts:

@@ -43,7 +43,8 @@ class Problem:
     """Super class that define our all four problems. We have in this class the common method that define a specific problem.
     """
     def __init__(self) -> None:
-        pass
+        self.has_trained = False
+        self.circuit = None
     
     def get_dicinv(self):
         """Get the inverted dictionnary from the original dictionnary
@@ -106,6 +107,7 @@ class Problem:
         print("Training model...")
         create_logs(problem.name, True, ["Training model..."])
         classifier, parameters = self.initialize(problem)
+        
         start = time.time()
         
         theta_opti = classifier.train(
