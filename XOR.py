@@ -5,7 +5,7 @@ from proglearn.sims import generate_gaussian_parity
 from problem import Problem, rescaleFeature
 
 
-NSHOTS = 1500
+NSHOTS = 10000
 qs = qiskit.Aer.get_backend('qasm_simulator')
 #Token used for the IBMQ circuits
 TOKEN = "73547946bd0f7f1e1b48368ac35872c76b8bd0100e1e84ea0411076c44208af1127b3b69f345e138c07b03c36809afba05d2e5d9aa1eac3e4d352be42575af06"
